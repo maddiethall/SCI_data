@@ -1,0 +1,26 @@
+Dyad,Troop,Troop_id,Relationship,Degree,Related_coeff
+AST_ASH,Yoke AAS,AAS,Sisters,2,50
+AST_SEL,Yoke AAS,AAS,Cousins,4,12.5
+ASH_SEL,Yoke AAS,AAS,Cousins,4,12.5
+TLY_ART,Yoke TLACJ,TLACJ,Mom/Daughter,1,50
+TLY_CJA,Yoke TLACJ,TLACJ,Mom/Daughter,1,50
+ART_CJA,Yoke TLACJ,TLACJ,Sisters,2,50
+CHA_TCH,Windmill,WM,Mom/Daughter,1,50
+CHA_AUT,Windmill,WM,Niece/Aunt,3,25
+CHA_POL,Windmill,WM,Niece/Aunt,3,25
+TCH_AUT,Windmill,WM,Gr Niece/Aunt,4,12.5
+TCH_POL,Windmill,WM,Gr Niece/Aunt,4,12.5
+POL_AUT,Windmill,WM,Sisters,2,50
+MAR_DDA,Yankee Bridge,YB,Aunt/Niece,3,25
+MAR_MAY,Yankee Bridge,YB,Sisters,2,50
+MAY_DDA,Yankee Bridge,YB,Mom/Daughter,1,50
+PHA_JJO,East Road,ER,Mom/Daughter,1,50
+PHA_LAU,East Road,ER,Sisters,2,50
+PHA_DEL,East Road,ER,3rd Cousins,8,0.781
+PHA_CBR,East Road,ER,Not related,NA,0
+JJO_LAU,East Road,ER,Niece/Aunt,3,25
+JJO_DEL,East Road,ER,mom's 3rd cousin,9,0.391
+JJO_CBR,East Road,ER,Not related,NA,0
+LAU_DEL,East Road,ER,3rd Cousins,8,0.781
+LAU_CBR,East Road,ER,Not related,NA,0
+DEL_CBR,East Road,ER,Not related,NA,0
