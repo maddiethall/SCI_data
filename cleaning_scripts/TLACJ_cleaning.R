@@ -112,3 +112,17 @@ behavior_events_clean <- behavior_events_clean %>%
   )
 
 saveRDS(behavior_events_clean, "clean_data/TLACJ_clean.rds")
+
+
+TLACJ_behavior_events = TLACJ_clean %>%
+  select(Date.Time,
+         Focal,
+         Weather,
+         Temperature..F.,
+         behavior_category,
+         behavior,
+         duration_seconds,
+         animal_id,
+         partner_id)
+
+saveRDS(TLACJ_behavior_events, "clean_data/TLACJ_behavior_events.rds")

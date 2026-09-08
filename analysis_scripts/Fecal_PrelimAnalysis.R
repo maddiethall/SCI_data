@@ -1,7 +1,8 @@
 library(dplyr)
 library(ggplot2)
+library(emmeans)
 
-fecal = readRDS("fecal_clean.rds")
+fecal = readRDS('/Users/maddiethall/R Repos/SCI_data/clean_data/fecal_clean.rds')
 
 ##############################################
 
@@ -33,5 +34,3 @@ ggplot(fecal,aes(
 ###################################
 
 summary(aov(fecal_gc ~ animal_id, data = fecal))
-
-
