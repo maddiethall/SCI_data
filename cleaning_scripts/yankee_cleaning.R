@@ -122,11 +122,3 @@ yankee_behavior_events = yankee_clean %>%
          partner_id)
 
 saveRDS(yankee_behavior_events, "clean_data/yankee_behavior_events.rds")
-
-
-#creating proximity dataset
-yankee_proximity = yankee_raw %>%
-  select(Date.Time, Focal, Weather, Temperature..F.,
-         MAR.1, MAR.2, MAR.3, MAR.4, MAR.5, MAR.6, MAR.7, MAR.8,
-         MAY.1, MAY.2, MAY.3, MAY.4, MAY.5, MAY.6, MAY.7, MAY.8,
-         DDA.1, DDA.2, DDA.3, DDA.4, DDA.5, DDA.6, DDA.7, DDA.8)

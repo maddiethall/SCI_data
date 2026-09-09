@@ -123,6 +123,4 @@ behavior_events <- behavior_events %>%
     )
   )
 
-
-
 saveRDS(behavior_events, "clean_data/AAS_behavior_events.rds")
