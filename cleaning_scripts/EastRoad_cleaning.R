@@ -3,9 +3,9 @@ library(tidyverse)
 
 #creating behavioral events dataset
 
-YokeAAS <- YokeAAS_raw
+east_road <- EastRoad_raw
 
-event_cols <- names(YokeAAS)[5:132]
+event_cols <- names(east_road)[5:132]
 
 new_names <- unlist(lapply(1:32, function(i) {
   c(
@@ -16,9 +16,10 @@ new_names <- unlist(lapply(1:32, function(i) {
   )
 }))
 
-names(YokeAAS)[5:132] <- new_names
 
-behavior_events <- YokeAAS %>%
+names(east_road)[5:132] <- new_names
+
+behavior_events <- east_road %>%
   mutate(focal_row = row_number()) %>%
   pivot_longer(
     cols = matches("^(START|END|BEHAVIOR|PARTNER)_\\d+$"),
@@ -43,7 +44,7 @@ behavior_events <- behavior_events %>%
 behavior_events <- behavior_events %>%
   filter(!is.na(BEHAVIOR), BEHAVIOR != "")
 
-#calculating duration
+
 behavior_events <- behavior_events %>%
   mutate(
     start_seconds = floor(START / 100) * 60 + (START %% 100),
@@ -54,46 +55,42 @@ behavior_events <- behavior_events %>%
 
 behavior_events <- behavior_events %>%
   mutate(
+    START_corrected = START,
     END_corrected = END,
     correction_note = NA_character_
   ) %>%
   mutate(
-    # Correct likely missing zero in Selene's vigilance event
-    END_corrected = if_else(
-      focal_row == 27 & event == "4",
-      200,
-      END_corrected
+    START_corrected = case_when(
+      focal_row == 109 & event == "2" ~ 248,
+      TRUE ~ START_corrected
     ),
-    correction_note = if_else(
-      focal_row == 27 & event == "4",
-      "END corrected from 20 to 200; likely missing zero",
-      correction_note
+    END_corrected = case_when(
+      focal_row == 109 & event == "2" ~ 408,
+      TRUE ~ END_corrected
+    ),
+    correction_note = case_when(
+      focal_row == 109 & event == "2" ~
+        "START/END reversed; corrected 408-248 to 248-408",
+      focal_row == 112 & event == "12" ~
+        "START and END both 1001; duration set to NA because intended duration cannot be determined",
+      TRUE ~ correction_note
     )
   ) %>%
   mutate(
-    # Recalculate end time and duration using corrected END
-    end_seconds = if_else(
-      !is.na(END_corrected),
-      floor(END_corrected / 100) * 60 + (END_corrected %% 100),
-      NA_real_
-    ),
-    duration_seconds = end_seconds - start_seconds,
-    # Head throw-back recorded with identical START/END;
-    # duration cannot be reliably determined
+    start_seconds = floor(START_corrected / 100) * 60 +
+      (START_corrected %% 100),
+    end_seconds = floor(END_corrected / 100) * 60 +
+      (END_corrected %% 100),
+    duration_seconds = end_seconds - start_seconds
+  ) %>%
+  mutate(
     duration_seconds = if_else(
-      focal_row == 6 & event == "7",
+      focal_row == 112 & event == "12",
       NA_real_,
       duration_seconds
-    ),
-    correction_note = if_else(
-      focal_row == 6 & event == "7",
-      "START and END both 415; duration set to NA rather than assuming duration",
-      correction_note
     )
   )
 
-
-#cleaning behavior events
 behavior_events <- behavior_events %>%
   separate(
     BEHAVIOR,
@@ -107,9 +104,10 @@ behavior_events <- behavior_events %>%
   mutate(
     focal_id = recode(
       Focal,
-      "Asteria" = "AST",
-      "Ash" = "ASH",
-      "Selene" = "SEL"
+      "Janis Joplin" = "JJO",
+      "Pearl Hart" = "PHA",
+      "Delilah" = "DEL",
+      "Laurel" = "LAU"
     )
   )
 
@@ -117,12 +115,12 @@ behavior_events <- behavior_events %>%
   mutate(
     partner_id = recode(
       PARTNER,
-      "Asteria" = "AST",
-      "Ash" = "ASH",
-      "Selene" = "SEL"
+      "Janis Joplin" = "JJO",
+      "Pearl Hart" = "PHA",
+      "Delilah" = "DEL",
+      "Laurel" = "LAU",
+      "Charlie Brown" = "CBR"
     )
   )
 
-
-
-saveRDS(behavior_events, "clean_data/AAS_behavior_events.rds")
+saveRDS(behavior_events, "clean_data/EastRoad_behavior_events.rds")
