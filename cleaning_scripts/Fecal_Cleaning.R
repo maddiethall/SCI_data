@@ -62,5 +62,28 @@ fecal_clean = fecal %>%
   select(animal_id, date, fecal_gc, collection_hour) %>%
   rename(time = collection_hour)
 
+fecal_clean <- fecal_clean %>%
+  mutate(
+    focal_id = case_when(
+      animal_id == "Artemis" ~ "ART",
+      animal_id == "Ash" ~ "ASH",
+      animal_id == "Asteria" ~ "AST",
+      animal_id == "Autumn" ~ "AUT",
+      animal_id == "Calamity Jane" ~ "CJA",
+      animal_id == "Chagall" ~ "CHA",
+      animal_id == "Delilah" ~ "DEL",
+      animal_id == "Delta Dawn" ~ "DDA",
+      animal_id == "Janis Joplin" ~ "JJO",
+      animal_id == "Laurel" ~ "LAU",
+      animal_id == "Marla" ~ "MAR",
+      animal_id == "May Lillie" ~ "MAY",
+      animal_id == "Pearl Hart" ~ "PHA",
+      animal_id == "Polli" ~ "POL",
+      animal_id == "Selene" ~ "SEL",
+      animal_id == "Terri-Lynn" ~ "TLY",
+      animal_id == "Tracy Chapman" ~ "TCH"
+    )
+  )
+
 saveRDS(fecal_clean, "fecal_clean.rds")
-write.csv(fecal, "fecal_clean.csv", row.names = FALSE)
+write.csv(fecal_clean, "fecal_clean.csv", row.names = FALSE)

@@ -10,7 +10,7 @@ library(psych)
 ####### included primarily as a behavioral indicator of stress
 ####### relatively rare: ~5.7 events per individual
 
-pca_data_reduced = pca_data_reduced %>%
+pca_data_reduced = pca_data %>%
   select(-agonism_rate, -Yawn)
 
 
@@ -48,3 +48,17 @@ pca_scores_reduced <- as.data.frame(pca_model_reduced$x) %>%
 pca_scores_reduced %>%
   select(troop, focal_id, PC1) %>%
   arrange(PC1)
+## PC2: potentially, socially-oriented coping vs self-directed coping
+pca_scores_reduced %>%
+  select(troop, focal_id, PC2) %>%
+  arrange(PC2)
+## PC3:
+pca_scores_reduced %>%
+  select(troop, focal_id, PC3) %>%
+  arrange(PC3)
+## PC4:
+pca_scores_reduced %>%
+  select(troop, focal_id, PC4) %>%
+  arrange(PC4)
+
+############## RETAIN PC1 & 2?
