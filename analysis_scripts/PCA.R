@@ -3,6 +3,7 @@ library(tidyr)
 library(ggplot2)
 library(corrr)
 library(ggcorrplot)
+library(psych)
 
 normalized_data = pca_data %>%
   select(-troop, -focal_id)
@@ -68,21 +69,11 @@ ggplot(
 #PC3: mainly driven by yawning but could relate to coping style??
 #PC4: clear self-directed/vigilance tendency
 
-#looking at individuals
-pca_scores <- as.data.frame(pca_model$x) %>%
-  bind_cols(
-    pca_data %>%
-      select(troop, focal_id)
-  )
-pca_scores %>%
-  select(troop, focal_id, PC1) %>%
-  arrange(PC1)
 
-pca_data %>%
-  filter(focal_id %in% c("AST", "ART", "TLY", "TCH")) %>%
-  print(n=Inf)
+################################################
+########## RETAINING NO AGONISM MODEL ##########
+################################################
 
-################################# RETAINING NO AGONISM MODEL
 #PCA without agonism
 pca_model_no_agonism <- prcomp(
   pca_data %>%
@@ -92,11 +83,20 @@ pca_model_no_agonism <- prcomp(
 summary(pca_model_no_agonism)
 #does not meaningfully chance variance structure
 
-pca_model_no_agonism$rotation
+pca_model_no_agonism$rotation[,1:4]
 #PC1 is essentially the same; mutual grooming is stronger
+####### give groom (-0.46), mutual groom (-0.42), receive groom (-0.45)
+####### vigilance (0.47), yawn (0.34)
+
 #PC2: similar but scratch is much stronger, yawn is added
+####### contact sit (0.53), mutual groom (0.42), yawn (0.45)
+####### self scratch (-0.54)
+
 #PC3: self-groom becomes dominant (+.728); cleaner than PCA with agonism
+####### give groom (0.42), self-groom (0.73), yawn (0.43)
+
 #PC4: biggest difference; contact sit replaces self groom
+####### contact sit (0.53), self-scratch (0.42), vig (0.52), self groom (0.35)
 
 
 pca_loadings_no_ag <- as.data.frame(pca_model_no_agonism$rotation) %>%
@@ -120,8 +120,20 @@ ggplot(
   geom_point() +
   geom_text(vjust = -0.5)
 
+pca_scores_no_ag <- as.data.frame(pca_model_no_agonism$x) %>%
+  bind_cols(
+    pca_data %>%
+      select(troop, focal_id))
+pca_scores_no_ag %>%
+  select(troop, focal_id, PC1) %>%
+  arrange(PC1)
+
+pca_scores_no_ag %>%
+  select(focal_id, PC1, PC2, PC3, PC4) %>%
+  arrange(PC1)
+
 #################################
-# evidence against including agonism:
+# evidence for not including agonism:
 # does not chance variance or overall PC structure (first 4 explain 81-82%)
 # doesn't chance number of components with eigenvalues > 1
 # similar individual-level scores across all 4 PCs
@@ -132,18 +144,59 @@ ggplot(
 cor(
   pca_scores$PC1,
   pca_scores_no_ag$PC1
-) #-0.927
+) 
+#PC1: -0.927
 #PC2: -0.82
 #PC3: 0.846
 #PC4: -0.863
 
+pca_data = pca_data %>%
+  select(-agonism_rate)
 
 
-#no agonism
-pca_scores_no_ag <- as.data.frame(pca_model_no_agonism$x) %>%
-  bind_cols(
-    pca_data %>%
-      select(troop, focal_id))
+# looking at individuals for each PC
+
+### PC1: grooming/affiliation vs vigilance/yawning
 pca_scores_no_ag %>%
   select(troop, focal_id, PC1) %>%
   arrange(PC1)
+pca_data %>%
+  filter(focal_id %in% c("TCH", "PHA", "ART", "TLY")) %>%
+  print(n=Inf)
+
+### PC2: contact sit/mutual groom/yawn vs self-scratch
+pca_scores_no_ag %>%
+  select(troop, focal_id, PC2) %>%
+  arrange(PC2)
+pca_data %>%
+  filter(focal_id %in% c("POL", "CJA", "CHA", "AST"))
+
+### PC3: Primarily self-grooming, with contributions from yawning/grooming
+pca_scores_no_ag %>%
+  select(troop, focal_id, PC3) %>%
+  arrange(PC3)
+pca_data %>%
+  filter(focal_id %in% c("ASH", "AST", "LAU", "CJA"))
+
+### PC4:
+pca_scores_no_ag %>%
+  select(troop, focal_id, PC4) %>%
+  arrange(PC4)
+pca_data %>%
+  filter(focal_id %in% c("LAU", "DEL", "CJA", "PHA"))
+
+
+###############################################
+## Parallel analysis: ultimately not useful due to small sample size
+fa.parallel(
+  pca_data %>%
+    select(-troop, -focal_id),
+  fa = "pc",
+  n.iter = 1000
+)
+eigen(
+  cor(
+    pca_data %>%
+      select(-troop, -focal_id)
+  )
+)$values
