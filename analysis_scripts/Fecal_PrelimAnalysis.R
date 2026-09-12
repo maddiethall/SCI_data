@@ -15,7 +15,7 @@ ggplot(fecal, aes(x = fecal_gc)) +
   ) +
   theme_classic()
 
-ggplot(fecal,aes(
+ggplot(fecal_clean,aes(
     x = reorder(animal_id, fecal_gc, FUN = median),
     y = fecal_gc
   )
