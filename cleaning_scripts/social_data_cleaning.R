@@ -1,4 +1,5 @@
 library(dplyr)
+library(tidyverse)
 
 
 # inspecting grooming data structure
@@ -140,3 +141,147 @@ grooming_complete <- grooming_complete %>%
     )
   ) %>%
   select(-observation_minutes_new)
+
+# relationship between event rate and duration rate
+grooming_complete %>%
+  select(
+    behavior,
+    event_rate_per_hour,
+    duration_per_hour
+  ) %>%
+  group_by(behavior) %>%
+  summarise(
+    correlation = cor(
+      event_rate_per_hour,
+      duration_per_hour
+    )
+  )
+# Give: r = .861; Mutual: r = .909; Receive: r = .788
+# use duration/hour as the main relationship-strength measure
+
+
+################### CREATE DIRECTIONAL GROOMING DATA
+
+directional_grooming <- grooming_complete %>%
+  group_by(troop, focal_id, partner_id) %>%
+  summarise(
+    observation_minutes = first(observation_minutes),
+    
+    give_duration = sum(
+      total_duration[behavior == "Give grooming"],
+      na.rm = TRUE
+    ),
+    
+    receive_duration = sum(
+      total_duration[behavior == "Receive grooming"],
+      na.rm = TRUE
+    ),
+    
+    give_events = sum(
+      events[behavior == "Give grooming"],
+      na.rm = TRUE
+    ),
+    
+    receive_events = sum(
+      events[behavior == "Receive grooming"],
+      na.rm = TRUE
+    ),
+    
+    .groups = "drop"
+  )
+
+# combine focal perspectives
+# create a copy of the data from the recipient's perspective, then join the two perspectives together
+directional_grooming <- directional_grooming %>%
+  left_join(
+    directional_grooming %>%
+      select(
+        troop,
+        focal_id,
+        partner_id,
+        observation_minutes,
+        give_duration,
+        receive_duration,
+        give_events,
+        receive_events
+      ) %>%
+      rename(
+        recipient = focal_id,
+        groomer = partner_id,
+        recipient_observation_minutes = observation_minutes,
+        recipient_receive_duration = receive_duration,
+        recipient_receive_events = receive_events
+      ),
+    by = c(
+      "troop",
+      "focal_id" = "groomer",
+      "partner_id" = "recipient"
+    )
+  )
+# clean dataset
+directional_grooming_clean <- directional_grooming %>%
+  transmute(
+    troop,
+    groomer = focal_id,
+    recipient = partner_id,
+    observation_minutes_groomer = observation_minutes,
+    observation_minutes_recipient = recipient_observation_minutes,
+    groomer_give_duration = give_duration.x,
+    recipient_receive_duration = recipient_receive_duration,
+    groomer_give_events = give_events.x,
+    recipient_receive_events = recipient_receive_events
+  )
+# fixing CBR NAs 
+directional_grooming_clean <- directional_grooming_clean %>%
+  mutate(
+    observation_minutes_groomer = replace_na(
+      observation_minutes_groomer, 0
+    ),
+    observation_minutes_recipient = replace_na(
+      observation_minutes_recipient, 0
+    )
+  )
+directional_grooming_clean <- directional_grooming_clean %>%
+  mutate(
+    groomer_give_duration = replace_na(
+      groomer_give_duration, 0
+    ),
+    recipient_receive_duration = replace_na(
+      recipient_receive_duration, 0
+    ),
+    groomer_give_events = replace_na(
+      groomer_give_events, 0
+    ),
+    recipient_receive_events = replace_na(
+      recipient_receive_events, 0
+    )
+  )
+
+# Calculate the pooled directional grooming rate
+#### grooming directed from A to B:
+## (focal_A GIVE + focal_B RECEIVE)/(focal_A obs time + focal_B obs time) x 60
+#### grooming directed from B to A:
+## (focal_B GIVE + focal_A RECEIVE)/(focal_B obs time + focal_A obs time) x 60
+#### mutual grooming is a separate measure
+
+directional_grooming_clean <- directional_grooming_clean %>%
+  mutate(
+    total_directional_duration =
+      groomer_give_duration + recipient_receive_duration,
+    
+    total_observation_minutes =
+      observation_minutes_groomer + observation_minutes_recipient,
+    
+    duration_per_hour =
+      total_directional_duration /
+      total_observation_minutes * 60,
+    
+    total_directional_events =
+      groomer_give_events + recipient_receive_events,
+    
+    event_rate_per_hour =
+      total_directional_events /
+      total_observation_minutes * 60
+  )
+
+saveRDS(directional_grooming_clean, "clean_data/directional_grooming.rds")
