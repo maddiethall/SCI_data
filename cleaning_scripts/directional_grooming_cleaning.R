@@ -7,16 +7,6 @@ lemur_behavior %>%
   filter(behavior %in% c("Give grooming", "Receive grooming", "Mutual grooming")) %>%
   count(behavior, focal_id, partner_id, sort = TRUE)
 
-# inspecting proximity data structure
-lemur_scan %>%
-  count(troop, focal_id, partner_id, proximity, sort = TRUE)
-lemur_scan %>%
-  count(troop, focal_id, partner_id) %>%
-  arrange(troop, focal_id, desc(n))
-lemur_scan %>%
-  count(focal_id, proximity) %>%
-  arrange(focal_id, proximity)
-
 
 ############# CREATE GROOMING DATASET
 
@@ -284,4 +274,50 @@ directional_grooming_clean <- directional_grooming_clean %>%
       total_observation_minutes * 60
   )
 
-saveRDS(directional_grooming_clean, "clean_data/directional_grooming.rds")
+
+## correcting CBR rows
+cbr_reverse <- directional_grooming %>%
+  filter(partner_id == "CBR") %>%
+  transmute(
+    troop,
+    groomer = "CBR",
+    recipient = focal_id,
+    observation_minutes = observation_minutes,
+    total_directional_duration = receive_duration,
+    total_directional_events = receive_events,
+    duration_per_hour = receive_duration / observation_minutes * 60,
+    event_rate_per_hour = receive_events / observation_minutes * 60
+  )
+female_to_cbr <- directional_grooming_clean %>%
+  filter(recipient == "CBR") %>%
+  transmute(
+    troop,
+    groomer,
+    recipient,
+    observation_minutes = observation_minutes_groomer,
+    total_directional_duration,
+    total_directional_events,
+    duration_per_hour,
+    event_rate_per_hour
+  )
+cbr_directional <- bind_rows(
+  female_to_cbr,
+  cbr_reverse
+)
+
+# add corrected rows to dataset
+directional_grooming_complete <- directional_grooming_clean %>%
+  filter(recipient != "CBR") %>%
+  select(
+    troop,
+    groomer,
+    recipient,
+    observation_minutes = observation_minutes_groomer,
+    total_directional_duration,
+    total_directional_events,
+    duration_per_hour,
+    event_rate_per_hour
+  ) %>%
+  bind_rows(cbr_directional)
+
+saveRDS(directional_grooming_complete, "clean_data/directional_grooming.rds")
