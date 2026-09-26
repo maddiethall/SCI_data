@@ -321,3 +321,45 @@ directional_grooming_complete <- directional_grooming_clean %>%
   bind_rows(cbr_directional)
 
 saveRDS(directional_grooming_complete, "clean_data/directional_grooming.rds")
+
+
+################### RECIPROCITY
+
+### calculation: 0-1 reciprocity/balance index
+#### reciprocity = 1 - abs val(A to B - B to A) / (A to B = B to A)
+##### 1 = perfectly balanced; 0 = completely one-sided
+
+# calculate using duration per hour
+reciprocity <- directional_grooming %>%
+  mutate(
+    individual_1 = pmin(groomer, recipient),
+    individual_2 = pmax(groomer, recipient)
+  ) %>%
+  group_by(troop, individual_1, individual_2) %>%
+  summarise(
+    grooming_1_to_2 = duration_per_hour[groomer == individual_1][1],
+    grooming_2_to_1 = duration_per_hour[groomer == individual_2][1],
+    .groups = "drop"
+  ) %>%
+  mutate( #recirprocity formula
+    reciprocity = if_else(
+      grooming_1_to_2 + grooming_2_to_1 > 0,
+      1 - abs(grooming_1_to_2 - grooming_2_to_1) /
+        (grooming_1_to_2 + grooming_2_to_1),
+      NA_real_
+    )
+  )
+
+# add grooming symmetry measure: (A to B - B to A) / (A to B + B to A)
+## +1 = entirely individual 1 to 2
+## 0 = perfectly balanced
+## -1 = entirely individual 2 to 1
+
+reciprocity <- reciprocity %>%
+  mutate(
+    grooming_asymmetry =
+      (grooming_1_to_2 - grooming_2_to_1) /
+      (grooming_1_to_2 + grooming_2_to_1)
+  )
+
+saveRDS(reciprocity, "clean_data/reciprocity_data.rds")

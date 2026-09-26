@@ -5,7 +5,7 @@ library(corrr)
 library(ggcorrplot)
 library(psych)
 
-## removing yawning from PCA (in addition to agonism)
+## removing yawning (and agonism) from PCA
 #### rational: 
 ####### included primarily as a behavioral indicator of stress
 ####### relatively rare: ~5.7 events per individual
@@ -62,3 +62,6 @@ pca_scores_reduced %>%
   arrange(PC4)
 
 ############## RETAIN PC1 & 2?
+
+pca_scores <- pca_scores_reduced %>%
+  select(troop, focal_id, PC1, PC2, PC3, PC4)

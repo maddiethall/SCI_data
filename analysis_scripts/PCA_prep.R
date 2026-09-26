@@ -269,3 +269,11 @@ pca_candidates %>%
 
 pca_data <- pca_candidates
 saveRDS(pca_data, "clean_data/pca_data.rds")
+
+# adding metadata
+pca_data <- pca_data %>%
+  left_join(
+    focal_metadata %>%
+      select(Animal_id, Age),
+    by = c("focal_id" = "Animal_id")
+  )

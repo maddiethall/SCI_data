@@ -171,4 +171,3 @@ lemur_behavior <- lemur_behavior %>%
 
 
 saveRDS(lemur_behavior, "clean_data/lemur_behavior.rds")
-

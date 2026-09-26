@@ -24,7 +24,6 @@ Yankee <- Yankee %>%
     )
   )
 
-
 AAS_activity <- AAS %>%
   select(Focal, `Date-Time`, `1`:`8`) %>%
   pivot_longer(
@@ -114,8 +113,6 @@ East_Road_scan <- East_Road_scan %>%
     )
   )
 saveRDS(East_Road_scan, "clean_data/East_Road_scan.rds")
-
-
 
 
 TLACJ_activity <- TLACJ %>%
@@ -219,8 +216,6 @@ Windmill_scan <- Windmill_proximity %>%
   )
 saveRDS(Windmill_scan, "clean_data/Windmill_scan.rds")
 
-
-
 Yankee_activity <- Yankee %>%
   select(Focal, `Date-Time`, `1`:`8`) %>%
   pivot_longer(
@@ -266,9 +261,6 @@ Yankee_scan <- Yankee_proximity %>%
   )
 saveRDS(Yankee_scan, "clean_data/Yankee_scan.rds")
 
-
-
-
 # adding troop identifiers
 AAS_scan <- AAS_scan %>%
   mutate(troop = "AAS")
@@ -281,8 +273,6 @@ Windmill_scan <- Windmill_scan %>%
 Yankee_scan <- Yankee_scan %>%
   mutate(troop = "Yankee")
 
-
-
 # combining datasets
 lemur_scan <- bind_rows(
   AAS_scan,
@@ -292,3 +282,68 @@ lemur_scan <- bind_rows(
   Yankee_scan
 )
 saveRDS(lemur_scan, "clean_data/lemur_scan.rds")
+
+
+################# CREATING PROXIMITY DATASET
+
+# isolate the proximity observations
+proximity_data <- lemur_scan %>%
+  filter(
+    !is.na(partner_id),
+    focal_id != partner_id
+  )
+
+# summarize the focal-level proximity counts
+proximity_summary <- proximity_data %>%
+  filter(!is.na(proximity)) %>%
+  count(troop, focal_id, partner_id, proximity, name = "scans") %>%
+  group_by(troop, focal_id, partner_id) %>%
+  mutate(
+    valid_scans = sum(scans),
+    proportion = scans / valid_scans
+  ) %>%
+  ungroup()
+
+# create the dyad-level proximity counts
+proximity_dyads <- proximity_summary %>%
+  mutate(
+    individual_1 = pmin(focal_id, partner_id),
+    individual_2 = pmax(focal_id, partner_id)
+  ) %>%
+  group_by(troop, individual_1, individual_2, proximity) %>%
+  summarise(
+    total_scans = sum(scans),
+    .groups = "drop"
+  ) %>%
+  group_by(troop, individual_1, individual_2) %>%
+  mutate(
+    total_valid_scans = sum(total_scans),
+    proportion = total_scans / total_valid_scans
+  ) %>%
+  ungroup()
+
+# reshape dataset
+proximity_dyads_wide <- proximity_dyads %>%
+  select(
+    troop,
+    individual_1,
+    individual_2,
+    proximity,
+    proportion
+  ) %>%
+  tidyr::pivot_wider(
+    names_from = proximity,
+    values_from = proportion,
+    names_prefix = "proximity_"
+  )
+
+# rename variables
+proximity_dyads_wide <- proximity_dyads_wide %>%
+  rename(
+    proximity_2_5m = `proximity_2-5 m`,
+    proximity_body_contact = `proximity_Body contact`,
+    proximity_less_2m = `proximity_Less than 2 m`,
+    proximity_over_5m = `proximity_Over 5 m`
+  )
+
+saveRDS(proximity_dyads_wide, "clean_data/proximity_data.rds")
