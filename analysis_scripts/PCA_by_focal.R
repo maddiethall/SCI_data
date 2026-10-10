@@ -126,7 +126,7 @@ scan_activity_summary %>%
   cor()
 
 ################### GENERATING PCA DATASET
-pca_continuous <- behavior_by_focal_summary_corrected %>%
+pca_continuous <- behavior_by_focal_summary %>%
   filter(
     behavior %in% c(
       "Contact sit",
@@ -483,3 +483,61 @@ yawn_nb_null <- glmmTMB(
 )
 
 anova(yawn_nb_null, yawn_nb)
+
+####################################
+
+############## wide format behaviors
+
+behavior_wide <- behavior_by_focal_summary %>%
+  pivot_wider(
+    id_cols = c(focal_id, troop),
+    names_from = behavior,
+    values_from = c(avg_rate, avg_proportion),
+    names_glue = "{behavior}_{.value}",
+    values_fill = 0
+  )
+
+
+agonism_behaviors <- c(
+  "Chase",
+  "Charge",
+  "Displace",
+  "Cuff",
+  "Bite",
+  "Lunge"
+)
+
+submission_behaviors <- c(
+  "Avoid",
+  "Be displaced",
+  "Flee",
+  "Cower"
+)
+
+composites <- behavior_by_focal_summary %>%
+  mutate(
+    category = case_when(
+      behavior %in% agonism_behaviors ~ "Agonism",
+      behavior %in% submission_behaviors ~ "Submission",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(category)) %>%
+  group_by(focal_id, troop, category) %>%
+  summarise(
+    avg_rate = sum(avg_rate, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_wider(
+    id_cols = c(focal_id, troop),
+    names_from = category,
+    values_from = avg_rate,
+    names_glue = "{category}_rate",
+    values_fill = 0
+  )
+
+behavior_wide <- behavior_wide %>%
+  left_join(
+    composites,
+    by = c("focal_id", "troop")
+  )

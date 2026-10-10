@@ -44,6 +44,7 @@ fgc_adjusted <- fgc_adjusted %>%
     adjusted_fgc = exp(predicted_log_fgc)
   )
 
+
 ####### fGC and scratching
 
 id_lookup <- fecal_clean %>%
@@ -364,6 +365,17 @@ vig_context_model <- glmmTMB(
   family = betabinomial(link = "logit"),
   data = vig_context
 )
+
+
+
+vig_context_model_troop <- glmmTMB(
+  cbind(duration_per_focal, 900 - duration_per_focal) ~
+    context + (1 | troop) + (1 | focal_id),
+  family = betabinomial(link = "logit"),
+  data = vig_context
+)
+
+
 # free-ranging females spent a significantly smaller proportion of 
 # focal observation time vigilant than captive females, while accounting for 
 # repeated focal observations within individuals
@@ -522,7 +534,28 @@ fgc_context_model <- lmer(
 )
 
 
+summary(fgc_context_model)
 
 
 
+fgc_context_model_troop <- lmer(
+  log(fecal_gc) ~ time + context +
+    (1 | troop) + (1 | animal_id),
+  data = fgc_context
+)
 
+summary(fgc_context_model_troop)
+
+fgc_context %>%
+  group_by(context, troop, animal_id) %>%
+  summarise(
+    mean_log_fgc = mean(log(fecal_gc), na.rm = TRUE),
+    n_samples = n(),
+    .groups = "drop"
+  ) %>%
+  group_by(context, troop) %>%
+  summarise(
+    n_animals = n(),
+    mean_log_fgc = mean(mean_log_fgc),
+    .groups = "drop"
+  )

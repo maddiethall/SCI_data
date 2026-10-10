@@ -7,7 +7,7 @@ library(ggplot2)
 #turn every dyad into two individual-partner records
 dyadic_relationships <- dyadic_data_complete %>%
   mutate(
-    close_proximity = proximity_body_contact + proximity_less_2m
+    close_proximity = proximity_body_contact + proximity_less_2m #proportion of scans
   )
 
 relationship_long <- bind_rows(
@@ -17,7 +17,8 @@ relationship_long <- bind_rows(
       partner_id = individual_2,
       troop,
       grooming_reciprocity,
-      close_proximity
+      close_proximity,
+      grooming_asymmetry
     ),
   
   dyadic_relationships %>%
@@ -26,7 +27,8 @@ relationship_long <- bind_rows(
       partner_id = individual_1,
       troop,
       grooming_reciprocity,
-      close_proximity
+      close_proximity,
+      grooming_asymmetry
     )
 )
 
@@ -38,6 +40,8 @@ relationship_individual <- relationship_long %>%
     n_partners = n(),
     mean_reciprocity = mean(grooming_reciprocity, na.rm = TRUE),
     mean_close_proximity = mean(close_proximity, na.rm = TRUE),
+    mean_asymmetry = mean(grooming_asymmetry, na.rm = TRUE),
+    total_proximity = sum(close_proximity, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -46,7 +50,8 @@ relationship_analysis <- individual_analysis %>%
   select(
     focal_id, troop, context,
     predicted_log_fgc, adjusted_fgc,
-    n_partners, mean_reciprocity, mean_close_proximity
+    n_partners, mean_reciprocity, mean_close_proximity,
+    mean_asymmetry, total_proximity
   )
 
 ###
