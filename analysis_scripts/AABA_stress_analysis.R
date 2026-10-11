@@ -373,7 +373,7 @@ vig_context_model_troop <- glmmTMB(
     context + (1 | troop) + (1 | focal_id),
   family = betabinomial(link = "logit"),
   data = vig_context
-)
+) 
 
 
 # free-ranging females spent a significantly smaller proportion of 
@@ -409,6 +409,15 @@ yawn_context_model <- glmmTMB(
   family = nbinom2,
   data = yawn_context
 )
+
+yawn_context_model_troop <- glmmTMB(
+  n_events ~ context +
+    (1 | troop) + (1 | focal_id),
+  family = nbinom2,
+  data = yawn_context
+)
+
+summary(yawn_context_model_troop)
 
 # self-scratching: FR somewhat higher, z = 1.19, p = .234
 scratch_context <- behavior_by_focal_complete %>%
@@ -528,7 +537,8 @@ fgc_context <- fecal_clean %>%
       "Free-ranging"
     )
   )
-fgc_context_model <- lmer(
+
+fgc_context_model <- lmerTest::lmer(
   log(fecal_gc) ~ time + context + (1 | animal_id),
   data = fgc_context
 )
@@ -538,7 +548,7 @@ summary(fgc_context_model)
 
 
 
-fgc_context_model_troop <- lmer(
+fgc_context_model_troop <- lmerTest::lmer(
   log(fecal_gc) ~ time + context +
     (1 | troop) + (1 | animal_id),
   data = fgc_context

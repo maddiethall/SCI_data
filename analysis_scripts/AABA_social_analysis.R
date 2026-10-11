@@ -172,6 +172,55 @@ contact_fgc_model <- lmer(
   data = fecal_contact
 )
 
+# total grooming: FR more grooming overall; troop adjusted: β = 0.401, SE = 0.195, p = 0.040
+total_grooming <- behavior_by_focal_complete %>%
+  filter(
+    behavior %in% c(
+      "Give grooming",
+      "Receive grooming",
+      "Mutual grooming"
+    )
+  ) %>%
+  group_by(troop, focal_id, datetime_key) %>%
+  summarise(
+    duration_per_focal = sum(duration_per_focal),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    context = if_else(
+      troop %in% c("AAS", "TLACJ"),
+      "Captive",
+      "Free-ranging"
+    )
+  )
+total_grooming %>%
+  group_by(context) %>%
+  summarise(
+    n_focals = n(),
+    n_individuals = n_distinct(focal_id),
+    mean_seconds = mean(duration_per_focal),
+    median_seconds = median(duration_per_focal),
+    sd_seconds = sd(duration_per_focal),
+    pct_zero = mean(duration_per_focal == 0) * 100,
+    .groups = "drop"
+  )
+
+total_grooming_model <- glmmTMB(
+  duration_per_focal ~ context + (1 | focal_id),
+  family = tweedie(link = "log"),
+  data = total_grooming
+)
+
+summary(total_grooming_model)
+
+total_grooming_model_troop <- glmmTMB(
+  duration_per_focal ~ context +
+    (1 | troop) + (1 | focal_id),
+  family = tweedie(link = "log"),
+  data = total_grooming
+)
+
+summary(total_grooming_model_troop)
 
 # mutual grooming x fgc
 mutual_individual <- mutual_context %>%
