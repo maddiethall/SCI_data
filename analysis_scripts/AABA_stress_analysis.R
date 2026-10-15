@@ -326,7 +326,7 @@ behavior_context_effects %>%
     hedges_g
   )
 
-# vigilance: FR lower, z = −4.17, p < .001
+# vigilance: FR lower, z = −4.17, p < .001 (w/ troop p = 0.0013)
 vig_context <- behavior_by_focal_complete %>%
   filter(behavior == "Vigilance") %>%
   mutate(
@@ -381,7 +381,7 @@ vig_context_model_troop <- glmmTMB(
 # repeated focal observations within individuals
 
 
-# yawning: FR lower, z = −2.55, p = .011
+# yawning: FR lower, z = −2.55, p = .011 (w/ troop: p = 0.017)
 yawn_context <- behavior_by_focal_complete %>%
   filter(behavior == "Yawn") %>%
   mutate(
@@ -444,11 +444,17 @@ scratch_context %>%
   )
 
 scratch_context_model <- glmmTMB(
-  n_events ~ context + (1 | focal_id),
+  proportion_per_focal ~ context + (1 | focal_id),
   family = nbinom2,
   data = scratch_context
 )
+summary(scratch_context_model)
 
+scratch_model_context <- lmerTest::lmer(
+  proportion_per_focal ~ context +
+    (1 | troop) + (1 | focal_id),
+  data = scratch_context)
+summary(scratch_model_context)
 
 scratch_individual <- stress_analysis %>%
   filter(behavior == "Self-scratch") %>%
@@ -522,7 +528,11 @@ groom_model <- lmer(
   data = fecal_groom
 )
 
-
+groom_model_context <- lmerTest::lmer(
+  proportion_per_focal ~ context +
+    (1 | troop) + (1 | focal_id),
+  data = groom_context)
+summary(groom_model_context)
 
 ################ physiological context
 fgc_context <- fecal_clean %>%
