@@ -247,7 +247,19 @@ figure2_plot_sig <- figure2_plot +
     expand = expansion(mult = c(0.05, 0.20))
   )
 
-figure2_plot_sig
+figure2_plot_final <- ggdraw() +
+  draw_plot(
+    figure2_plot_sig,
+    x = 0.06, y = 0.15,
+    width = 0.90, height = 0.80
+  ) +
+  draw_label(
+    "Seconds/hour",
+    x = 0.05, y = 0.55,
+    angle = 90,
+    size = 12)
+  
+figure2_plot_final
 
 ######################################################
 # individual variation in vigilance
@@ -342,7 +354,7 @@ all_grooming_edges <- dyadic_data_complete %>%
     ),
     troop = factor(
       troop,
-      levels = c("AAS", "TLACJ", "East Road", "Windmill", "Yankee")
+      levels = c("East Road", "Windmill", "Yankee", "AAS", "TLACJ")
     )
   ) %>%
   select(troop, from, to, grooming_seconds_per_hour)
@@ -405,7 +417,7 @@ make_grooming_heatmap <- function(troop_name) {
 }
 
 grooming_heatmaps <- lapply(
-  c("AAS", "TLACJ", "East Road", "Windmill", "Yankee"),
+  c("East Road", "Windmill", "Yankee", "AAS", "TLACJ"),
   make_grooming_heatmap
 )
 
@@ -434,41 +446,36 @@ clean_heatmaps <- lapply(grooming_heatmaps, function(p) {
 
 # Arrange the five heatmaps in one row
 heatmap_row <- plot_grid(
-  plotlist = clean_heatmaps,
-  nrow = 1,
-  align = "h"
+  plotlist = c(clean_heatmaps, list(NULL)),
+  ncol = 3,
+  align = "hv"
 )
 
 # Assemble everything using manual positions
 final_grooming_figure <- ggdraw() +
   draw_plot(
     heatmap_row,
-    x = 0.04, y = 0.18,
-    width = 0.94, height = 0.77
+    x = 0.06, y = 0.15,
+    width = 0.90, height = 0.80
   ) +
   draw_label(
     "Groomer",
-    x = 0.02, y = 0.57,
+    x = 0.05, y = 0.55,
     angle = 90,
     size = 12
   ) +
   draw_label(
     "Recipient",
-    x = 0.51, y = 0.14,
+    x = 0.50, y = 0.1,
     size = 12
   ) +
   draw_grob(
     shared_legend,
-    x = 0.70, y = 0.03,
-    width = 0.28, height = 0.13
+    x = 0.68, y = 0.25,
+    width = 0.30, height = 0.10
   )
+
 
 final_grooming_figure
 
-ggsave(
-  "figures/grooming_heatmaps.png",
-  final_grooming_figure,
-  width = 13,
-  height = 3.5,
-  dpi = 300
-)
+
