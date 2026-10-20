@@ -1,3 +1,6 @@
+library(tidyverse)
+library(rptR)
+
 #################### VARIABLE SELECTION FOR PCA
 
 # behavior prevalence
@@ -238,6 +241,15 @@ vigilance_rpt <- rpt(
 )
 # R = 0.229, 95% CI [0.098, 0.359], permutation p = .001; repeatability in vigilance across focal observations
 
+vigilance_rpt_troop <- rpt(
+  proportion_per_focal ~ troop + (1 | focal_id),
+  grname = "focal_id",
+  data = vigilance_repeatability,
+  datatype = "Gaussian",
+  nboot = 1000,
+  npermut = 1000
+)
+summary(vigilance_rpt_troop)
 
 
 repeatability_continuous <- behavior_by_focal_complete %>%

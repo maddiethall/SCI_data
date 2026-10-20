@@ -123,14 +123,23 @@ stress_metrics <- stress_metrics %>%
     )
   )
 
+fgc_medians <- fecal_clean %>%
+  group_by(animal_id) %>%
+  summarise(
+    median_fgc = median(fecal_gc, na.rm = TRUE),
+    n_samples = n(),
+    .groups = "drop"
+  )
+
+
 stress_analysis <- stress_metrics %>%
   left_join(
     id_lookup,
     by = "focal_id"
   ) %>%
   left_join(
-    fgc_adjusted %>%
-      select(animal_id, predicted_log_fgc, adjusted_fgc),
+    fgc_medians %>%
+      select(animal_id, median_fgc),
     by = "animal_id"
   )
 

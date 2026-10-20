@@ -247,7 +247,7 @@ mutual_fgc_model <- lmer(
 
 #################### aggregated fgc samples
 
-individual_analysis <- fgc_adjusted %>%
+individual_analysis <- fgc_medians %>%
   left_join(id_lookup, by = "animal_id") %>%
   mutate(
     troop = case_when(
@@ -268,8 +268,7 @@ individual_analysis <- fgc_adjusted %>%
     animal_id,
     troop,
     context,
-    predicted_log_fgc,
-    adjusted_fgc
+    median_fgc
   )
 
 stress_individual_wide <- stress_metrics %>%
@@ -307,11 +306,12 @@ individual_analysis <- individual_analysis %>%
     by = "focal_id"
   )
 
+
 troop_summary <- individual_analysis %>%
   group_by(context, troop) %>%
   summarise(
     n = n(),
-    mean_adjusted_fgc = mean(adjusted_fgc),
+    mean_fgc = mean(mean_fgc),
     mean_self_groom = mean(self_groom_min_hr),
     mean_self_scratch = mean(self_scratch_events_hr),
     mean_vigilance = mean(vigilance_min_hr),
@@ -326,7 +326,7 @@ individual_analysis %>%
   group_by(context) %>%
   summarise(
     n = n(),
-    r_self_groom = cor(predicted_log_fgc, self_groom_min_hr),
+    r_self_groom = cor(mean_fgc, self_groom_min_hr),
     r_self_scratch = cor(predicted_log_fgc, self_scratch_events_hr),
     r_vigilance = cor(predicted_log_fgc, vigilance_min_hr),
     r_yawn = cor(predicted_log_fgc, yawn_events_hr),
