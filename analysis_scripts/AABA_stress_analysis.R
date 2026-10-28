@@ -3,6 +3,7 @@ library(lme4)
 library(dplyr)
 library(ggplot2)
 library(glmmTMB)
+library(DHARMa)
 
 
 # scratching
@@ -557,7 +558,7 @@ fgc_context <- fecal_clean %>%
     )
   )
 
-fgc_context_model <- lmerTest::lmer(
+fgc_context_model_simple <- lmerTest::lmer(
   log(fecal_gc) ~ time + context + (1 | animal_id),
   data = fgc_context
 )

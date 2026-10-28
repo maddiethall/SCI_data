@@ -3,6 +3,8 @@ library(lme4)
 library(dplyr)
 library(ggplot2)
 library(glmmTMB)
+library(DHARMa)
+
 
 social_summary <- behavior_by_focal_complete %>%
   filter(
@@ -83,7 +85,7 @@ contact_context_model <- glmmTMB(
   data = contact_context
 )
 
-# give and receive grooming:FR ~2.44× higher; p=.0015
+# give and receive grooming:FR ~2.44× higher; p=.0015 (with troop: p = 0.00148)
 
 directional_grooming <- behavior_by_focal_complete %>%
   filter(behavior %in% c("Give grooming", "Receive grooming")) %>%
@@ -106,6 +108,14 @@ directional_grooming_model <- glmmTMB(
   data = directional_grooming
 )
 
+directional_grooming_model_troop <- glmmTMB(
+  duration_per_focal ~ context + 
+  (1 | troop) + (1 | focal_id),
+  family = tweedie(link = "log"),
+  data = directional_grooming
+)
+summary(directional_grooming_model_troop)
+
 # mutual grooming: No clear difference; p=.581
 
 mutual_context <- behavior_by_focal_complete %>%
@@ -118,8 +128,9 @@ mutual_context <- behavior_by_focal_complete %>%
     )
   )
 
-mutual_context_model <- glmmTMB(
-  duration_per_focal ~ context + (1 | focal_id),
+mutual_context_model_troop <- glmmTMB(
+  duration_per_focal ~ context + 
+    (1 | troop) + (1 | focal_id),
   family = tweedie(link = "log"),
   data = mutual_context
 )
@@ -355,223 +366,5 @@ fgc_individual_check <- fecal_clean %>%
       select(focal_id, predicted_log_fgc, adjusted_fgc),
     by = "focal_id"
   )
-
-stress_models_individual <- list(
-  self_groom = lm(
-    predicted_log_fgc ~ self_groom_min_hr + context,
-    data = individual_analysis
-  ),
-  
-  self_scratch = lm(
-    predicted_log_fgc ~ self_scratch_events_hr + context,
-    data = individual_analysis
-  ),
-  
-  vigilance = lm(
-    predicted_log_fgc ~ vigilance_min_hr + context,
-    data = individual_analysis
-  ),
-  
-  yawn = lm(
-    predicted_log_fgc ~ yawn_events_hr + context,
-    data = individual_analysis
-  )
-)
-
-lapply(stress_models_individual, summary)
-
-
-
-
-social_models_individual <- list(
-  contact = lm(
-    predicted_log_fgc ~ contact_sec_per_focal + context,
-    data = individual_analysis
-  ),
-  
-  directional_grooming = lm(
-    predicted_log_fgc ~ directional_grooming_sec_per_focal + context,
-    data = individual_analysis
-  ),
-  
-  mutual_grooming = lm(
-    predicted_log_fgc ~ mutual_groom_sec_per_focal + context,
-    data = individual_analysis
-  )
-)
-
-lapply(social_models_individual, summary)
-
-
-
-############ diagnostics
-
-#contact siting
-par(mfrow = c(2, 2))
-plot(social_models_individual$contact)
-par(mfrow = c(1, 1))
-
-cooks.distance(social_models_individual$contact)
-
-which(
-  cooks.distance(social_models_individual$contact) >
-    4 / nrow(individual_analysis)
-)
-
-# outside of Cook's D threshold:
-## JJO: D = .251
-## PHA: D = .265
-## CJA: D = .586
-
-# leave-one-out sensitivity analysis
-contact_loo <- lapply(seq_len(nrow(individual_analysis)), function(i) {
-  
-  model <- lm(
-    predicted_log_fgc ~ contact_sec_per_focal + context,
-    data = individual_analysis[-i, ]
-  )
-  
-  coef_table <- summary(model)$coefficients
-  
-  data.frame(
-    omitted = individual_analysis$focal_id[i],
-    estimate = coef_table["contact_sec_per_focal", "Estimate"],
-    se = coef_table["contact_sec_per_focal", "Std. Error"],
-    t = coef_table["contact_sec_per_focal", "t value"],
-    p = coef_table["contact_sec_per_focal", "Pr(>|t|)"]
-  )
-})
-
-contact_loo <- bind_rows(contact_loo)
-
-contact_loo
-
-contact_loo %>%
-  summarise(
-    min_estimate = min(estimate),
-    max_estimate = max(estimate),
-    min_p = min(p),
-    max_p = max(p)
-  )
-
-
-#mutual grooming
-par(mfrow = c(2, 2))
-plot(social_models_individual$mutual_grooming)
-par(mfrow = c(1, 1))
-
-cooks.distance(social_models_individual$mutual_grooming)
-
-which(
-  cooks.distance(social_models_individual$mutual_grooming) >
-    4 / nrow(individual_analysis)
-)
-
-# outside of Cook's D threshold:
-## PHA: D = .288
-## CJA: D = .499
-
-# leave-one-out sensitivity analysis
-mutual_loo <- lapply(seq_len(nrow(individual_analysis)), function(i) {
-  
-  model <- lm(
-    predicted_log_fgc ~ mutual_groom_sec_per_focal + context,
-    data = individual_analysis[-i, ]
-  )
-  
-  coef_table <- summary(model)$coefficients
-  
-  data.frame(
-    omitted = individual_analysis$focal_id[i],
-    estimate = coef_table["mutual_groom_sec_per_focal", "Estimate"],
-    se = coef_table["mutual_groom_sec_per_focal", "Std. Error"],
-    t = coef_table["mutual_groom_sec_per_focal", "t value"],
-    p = coef_table["mutual_groom_sec_per_focal", "Pr(>|t|)"]
-  )
-})
-
-mutual_loo <- bind_rows(mutual_loo)
-
-mutual_loo
-
-mutual_loo %>%
-  summarise(
-    min_estimate = min(estimate),
-    max_estimate = max(estimate),
-    min_p = min(p),
-    max_p = max(p)
-  )
-
-#####################
-# contact sitting: no clear context differences
-## fGC association after accounting for context is positive (b=.000703, p=.056)
-## positive in all LOO models
-# directional grooming: higher in FR; essentially no association with fGC after context (b=.000583, p=.811)
-## mutual grooming: no clear context differences
-## fGC association after accounting for context is positive (b=.00393, p=.086)
-## positive in all LOO models
-#####################
-
-confint(social_models_individual$contact)
-confint(social_models_individual$directional_grooming)
-confint(social_models_individual$mutual_grooming)
-lapply(stress_models_individual, confint)
-
-
-# sensitivity analysis with raw vs predicted fGC values
-individual_analysis <- individual_analysis %>%
-  left_join(
-    fgc_individual_check %>%
-      select(focal_id, mean_log_fgc),
-    by = "focal_id"
-  )
-
-stress_models_rawmean <- list(
-  self_groom = lm(
-    mean_log_fgc ~ self_groom_min_hr + context,
-    data = individual_analysis
-  ),
-  self_scratch = lm(
-    mean_log_fgc ~ self_scratch_events_hr + context,
-    data = individual_analysis
-  ),
-  vigilance = lm(
-    mean_log_fgc ~ vigilance_min_hr + context,
-    data = individual_analysis
-  ),
-  yawn = lm(
-    mean_log_fgc ~ yawn_events_hr + context,
-    data = individual_analysis
-  )
-)
-
-social_models_rawmean <- list(
-  contact = lm(
-    mean_log_fgc ~ contact_sec_per_focal + context,
-    data = individual_analysis
-  ),
-  directional_grooming = lm(
-    mean_log_fgc ~ directional_grooming_sec_per_focal + context,
-    data = individual_analysis
-  ),
-  mutual_grooming = lm(
-    mean_log_fgc ~ mutual_groom_sec_per_focal + context,
-    data = individual_analysis
-  )
-)
-
-extract_behavior_result <- function(model) {
-  x <- summary(model)$coefficients
-  
-  data.frame(
-    estimate = x[2, "Estimate"],
-    se = x[2, "Std. Error"],
-    t = x[2, "t value"],
-    p = x[2, "Pr(>|t|)"]
-  )
-}
-
-lapply(stress_models_rawmean, extract_behavior_result)
-lapply(social_models_rawmean, extract_behavior_result)
 
 
